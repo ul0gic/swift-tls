@@ -61,6 +61,7 @@ extension ServerHandshakeStateMachine {
 
         /// The server name for the purposes of the SNI extension.
         let serverName: String?
+        let receivedServerNameValidator: (@Sendable (String?) -> Bool)?
 
         /// The QUIC transport parameters, if any are set.
         let quicTransportParameters: ByteBuffer?
@@ -131,6 +132,7 @@ extension ServerHandshakeStateMachine {
 
         init(
             serverName: String? = nil,
+            receivedServerNameValidator: (@Sendable (String?) -> Bool)? = nil,
             quicTransportParameters: ByteBuffer? = nil,
             alpn: [ApplicationLayerProtocol]? = nil,
             transportIsQUIC: Bool = false,
@@ -146,6 +148,7 @@ extension ServerHandshakeStateMachine {
         ) {
             do throws(TLSError) {
                 self.serverName = serverName
+                self.receivedServerNameValidator = receivedServerNameValidator
                 self.quicTransportParameters = quicTransportParameters
                 self.alpn = alpn
                 self.transportIsQUIC = transportIsQUIC

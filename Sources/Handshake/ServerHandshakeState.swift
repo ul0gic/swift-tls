@@ -306,6 +306,7 @@ extension ServerHandshakeState {
         var clientALPN: [ApplicationLayerProtocol]? = nil
         var clientOfferedPSKs: Extension.PreSharedKey.OfferedPSKs? = nil
         var clientIndicatedEarlyData: Bool = false
+        var clientServerName: ByteBuffer? = nil
         let serverSupportedGroups: [NamedGroup]
         let serverSupportedSignatureAlgs: [SignatureScheme] /* must include at least one element */
         let serverSupportedCertificateTypes: [CertificateType] /* must include at least one element */
@@ -341,10 +342,8 @@ extension ServerHandshakeState {
                 clientRequestedClientCertificateTypes = requestedCertificateTypes
             case .preSharedKeyKexModes(let pskKexModes):
                 clientRequestPSKKexModes = pskKexModes
-            case .serverName(_):
-                // pass. Currently never used by server so we don't bother storing it.
-                // TODO: Flesh out when supporting session resumption/certificate selection.
-                break
+            case .serverName(.clientHello(let names)):
+                clientServerName = names.hostName
             case .quicTransportParameters(let transportParams):
                 clientQUICTransportParameters = transportParams.opaqueOffer
             case .alpn(.offer(let alpnExt)):
@@ -817,6 +816,21 @@ extension ServerHandshakeState {
             }
 
             try clientHelloVerifier.validateExtensions()
+            if let validateServerName = idleState.configuration.receivedServerNameValidator {
+                let serverName: String?
+                if let bytes = clientHelloVerifier.clientServerName?.readableBytesView {
+                    guard bytes.allSatisfy({ $0 < 128 }),
+                          let name = String(validating: bytes, as: UTF8.self) else {
+                        throw TLSError.illegalParameter
+                    }
+                    serverName = name
+                } else {
+                    serverName = nil
+                }
+                guard validateServerName(serverName) else {
+                    throw TLSError.handshakeFailure
+                }
+            }
 
             let serverSupportedCipherSuites: [CipherSuite]
             if let configuredCipherSuites = idleState.configuration.supportedCipherSuites {

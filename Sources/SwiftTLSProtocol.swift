@@ -72,6 +72,7 @@ public struct SwiftTLSOptions {
 
     // options used for clients and servers
     public var serverName: String?
+    public var receivedServerNameValidator: (@Sendable (String?) -> Bool)? = nil
     public var quicTransportParameters: [UInt8]?
     public var applicationProtocols: [String]?
 
@@ -352,6 +353,7 @@ fileprivate func serverStateMachineFromTLSOptions(options: SwiftTLSOptions, forQ
         let configuration = ServerHandshakeStateMachine
             .Configuration(
                 serverName: options.serverName,
+                receivedServerNameValidator: options.receivedServerNameValidator,
                 quicTransportParameters: quicTransportParameters,
                 alpn: options.applicationProtocols,
                 transportIsQUIC: forQUIC,
