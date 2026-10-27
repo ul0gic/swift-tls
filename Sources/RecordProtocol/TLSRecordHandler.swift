@@ -568,7 +568,7 @@ struct TLSRecordHandler: ~Copyable {
     }
 
     // TLSError -> Alert
-    private func tlsErrorToAlert(error: TLSError) -> Alert {
+    static func tlsErrorToAlert(error: TLSError) -> Alert {
         switch error {
         case .truncatedMessage:
             return .decodeError
@@ -775,7 +775,7 @@ struct TLSRecordHandler: ~Copyable {
                 self.tlsError = TLSError.processNetworkDataErrorBeforeHandshakeStart
                 throw TLSError.processNetworkDataErrorBeforeHandshakeStart
             }
-            let alert = tlsErrorToAlert(error: error)
+            let alert = Self.tlsErrorToAlert(error: error)
             if alert != .closeNotify {
                 self.tlsError = error
             }

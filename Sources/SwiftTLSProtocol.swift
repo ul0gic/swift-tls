@@ -481,6 +481,11 @@ public class SwiftTLSHandshaker {
         errorCodeFromLatestError(latestError)
     }
 
+    public var alertDescription: UInt8? {
+        guard case .tlsError(let error)? = self.latestError else { return nil }
+        return TLSRecordHandler.tlsErrorToAlert(error: error).alertDescription
+    }
+
     static func encryptionLevel(_ level: EncryptionLevel?) -> SwiftTLSOptions.EncryptionLevel {
         guard let level else {
             return .initial
